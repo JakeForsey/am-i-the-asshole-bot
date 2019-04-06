@@ -21,13 +21,20 @@ def main():
     anubis = Anubis()
     # judgment = anubis.judge(aita_submission)
 
-    # TODO (Sam) Post the judgementon the submission with a witty comment
+    # TODO (Sam) Post the judgement on the submission with a witty comment
 
 
 if __name__ == "__main__":
     argument_parser = argparse.ArgumentParser()
     argument_parser.add_argument("--example_arg")
+    argument_parser.add_argument("--logging_level", default=logging.DEBUG)
 
     args = argument_parser.parse_args()
+
+    logging.basicConfig(level=args.logging_level)
+
+    LOGGER.info("Running AITA Bot")
+    LOGGER.info("Config: %s", CONFIG)
+    LOGGER.info("Arguments: %s", args)
 
     main()
