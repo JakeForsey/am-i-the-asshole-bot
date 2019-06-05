@@ -4,3 +4,6 @@ integration:
     client_id: 'aqdGizEnVSPqgA'
     client_secret: '1pjYER2d72Ubx0oL5x4A_CmZGrQ'
     user_agent: 'am-i-the-asshole-bot'
+
+  database:
+    db_path: aita_db.db

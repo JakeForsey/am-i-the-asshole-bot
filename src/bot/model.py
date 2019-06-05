@@ -1,4 +1,3 @@
-from datetime import datetime
 from enum import Enum
 from typing import NamedTuple
 from typing import Optional
@@ -15,15 +14,8 @@ class Judgement(Enum):
 
     @staticmethod
     def from_reddit_link_flair_text(flair_text: str):
-        print(flair_text)
 
-        if flair_text == "META":
-            return None
-
-        elif flair_text is None:
-            return None
-
-        elif flair_text == "Not the A-hole":
+        if flair_text == "Not the A-hole":
             return Judgement.NTA
 
         elif flair_text == "No A-holes here":
@@ -35,8 +27,10 @@ class Judgement(Enum):
         elif flair_text == "Everyone Sucks":
             return Judgement.ESH
 
+        elif flair_text == "Not enough info":
+            return Judgement.INFO
+
         else:
-            print(f"Warning, unable to convert to {flair_text} to Judgement")
             return None
 
 
@@ -44,7 +38,7 @@ class AITASubmission(NamedTuple):
     submission_id: str
     submission_title: str
     submission_body: str
-    submitted_at: datetime
+    submitted_at: float
     reddit_judgement: Optional[Judgement]
     annubis_judgement: Optional[Judgement]
 
