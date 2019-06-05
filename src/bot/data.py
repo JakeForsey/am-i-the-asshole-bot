@@ -1,4 +1,4 @@
-from typing import Generator
+from typing import Iterable
 from typing import List
 
 import praw
@@ -21,8 +21,13 @@ class RedditScraper:
             user_agent=user_agent
         )
 
-    def get_submissions(self) -> Generator[AITASubmission]:
-        for submission in self._reddit.subreddit('AmItheAsshole').hot(limit=10):
+    def get_submissions(self) -> Iterable[AITASubmission]:
+        for submission in self._reddit.subreddit('AmItheAsshole').hot(limit=100):
+            # If its a meta (submissions about the subreddit) submission then it
+            # is not of interest
+            if submission.link_flair_text == "META":
+                continue
+
             yield AITASubmission.from_reddit_submission(submission)
 
     def get_judgement(self, submission_id: str) -> Judgement:

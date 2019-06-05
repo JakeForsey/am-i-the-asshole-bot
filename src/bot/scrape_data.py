@@ -1,7 +1,6 @@
-import praw
-
 from src.bot.config import get_config
 from src.bot.data import RedditScraper
+from src.bot.data import SubmissionDAO
 
 
 def scape():
@@ -13,10 +12,11 @@ def scape():
         user_agent=cfg.integration.reddit.user_agent
     )
 
+    dao = SubmissionDAO()
+
     for submission in scraper.get_submissions():
         print(submission)
-
-        # TODO (Jake) Parse number of NTA YTA etc. and save to csv
+        dao.insert(submission)
 
 
 if __name__ == "__main__":
