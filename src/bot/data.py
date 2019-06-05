@@ -25,18 +25,17 @@ class RedditScraper:
 
     def get_aita_submissions(self) -> Iterable[AITASubmission]:
         flair_texts = []
-        for submission in self._reddit.subreddit('AmItheAsshole').hot(limit=100):
+        for period in ["all", "year", "month", "week", "day"]:
+            for submission in self._reddit.subreddit('AmItheAsshole').top(period, limit=10000000):
 
-            flair_texts.append(submission.link_flair_text)
+                flair_texts.append(submission.link_flair_text)
 
-            # If its a meta (submissions about the subreddit) submission then it
-            # is not of interest
-            if submission.link_flair_text == "META":
-                continue
+                # If its a meta (submissions about the subreddit) submission then it
+                # is not of interest
+                if submission.link_flair_text == "META":
+                    continue
 
-            yield AITASubmission.from_reddit_submission(submission)
-
-        print(set(flair_texts))
+                yield AITASubmission.from_reddit_submission(submission)
 
     def get_judgement(self, submission_id: str) -> Judgement:
         # TODO get the flair for the submission (which will
@@ -78,7 +77,6 @@ class AITASubmissionDAO:
 
     def insert(self, aita_submission: AITASubmission):
         cursor = self._conn.cursor()
-        print(aita_submission)
         cursor.execute(
             self.INSERT_SUBMISSION_SQL,
             self.aita_submission_to_record(aita_submission)
@@ -108,7 +106,7 @@ class AITASubmissionDAO:
             aita_submission.submission_id,
             aita_submission.submission_title,
             aita_submission.submission_body,
-            aita_submission.submitted_at,
+            aita_submission.submitted_at_utc,
             reddit_judgement_str,
             anubis_judgement_str
         )

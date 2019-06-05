@@ -39,8 +39,9 @@ def main(args):
     elif args.mode == "train":
         LOGGER.info("Training Anubis")
 
-        # TODO (Jake)  Write a training loop
-        pass
+        anubis.train(
+            list(dao.aita_submissions())
+        )
 
     elif args.mode == "judge":
         LOGGER.info("Judging people with Anubis")
@@ -53,7 +54,7 @@ def main(args):
 
 if __name__ == "__main__":
     argument_parser = argparse.ArgumentParser()
-    argument_parser.add_argument("--mode", choices=["scrape", "judge", "run"])
+    argument_parser.add_argument("--mode", choices=["scrape", "train", "judge"])
     argument_parser.add_argument("--logging_level", default=logging.DEBUG)
 
     args = argument_parser.parse_args()
