@@ -32,6 +32,7 @@ def main(args):
     if args.mode == "scrape":
         LOGGER.info("Scraping data for Anubis")
 
+        # TODO (Jake or Sam) Make this run over and over on a schedule
         for aita_submission in scraper.get_aita_submissions():
             dao.insert(aita_submission)
 
