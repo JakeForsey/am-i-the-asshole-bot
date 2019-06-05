@@ -7,6 +7,7 @@ import sqlite3
 
 from src.bot.model import Judgement
 from src.bot.model import AITASubmission
+from src.bot.model import from_reddit_submission
 
 
 class RedditScraper:
@@ -35,7 +36,7 @@ class RedditScraper:
                 if submission.link_flair_text == "META":
                     continue
 
-                yield AITASubmission.from_reddit_submission(submission)
+                yield from_reddit_submission(submission)
 
     def get_judgement(self, submission_id: str) -> Judgement:
         # TODO get the flair for the submission (which will
