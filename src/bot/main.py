@@ -5,11 +5,10 @@ from src.bot import config
 from src.bot.ml import Anubis
 from src.bot.data import AITASubmissionDAO
 from src.bot.data import RedditScraper
-
+from src.bot.plot import plotter
 
 CONFIG = config.get_config()
 LOGGER = logging.getLogger(__name__)
-
 
 def main(args):
     """
@@ -51,10 +50,13 @@ def main(args):
 
             # TODO (Sam) Post the judgement on the submission with a witty comment
 
+    elif args.mode == "plotter":
+        LOGGER.info("Plotter arg passed")
+        plotter.loadDB(plotter)
 
 if __name__ == "__main__":
     argument_parser = argparse.ArgumentParser()
-    argument_parser.add_argument("--mode", choices=["scrape", "train", "judge"])
+    argument_parser.add_argument("--mode", choices=["scrape", "train", "judge", "plotter"])
     argument_parser.add_argument("--logging_level", default=logging.DEBUG)
 
     args = argument_parser.parse_args()

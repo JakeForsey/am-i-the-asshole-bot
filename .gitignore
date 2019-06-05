@@ -1,2 +1,5 @@
 .idea/
 *.db
+/env
+/venv
+/src/bot/__pycache__
