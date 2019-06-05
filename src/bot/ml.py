@@ -24,8 +24,10 @@ class Anubis:
 
         self._pipeline = Pipeline(
             steps=[
-                ("vectorize", TfidfVectorizer()),
-                ("classify", GradientBoostingClassifier(n_estimators=1000, verbose=True))
+                ("vectorize", TfidfVectorizer(stop_words='english', ngram_range=(1, 3), max_df=0.3, min_df=3)),
+                ("classify", GradientBoostingClassifier(
+                    n_estimators=1000, verbose=True, subsample=0.8
+                ))
             ]
         )
 
