@@ -23,6 +23,7 @@ class RedditScraper:
 
     def get_aita_submissions(self) -> Iterable[AITASubmission]:
         for submission in self._reddit.subreddit('AmItheAsshole').hot(limit=100):
+
             # If its a meta (submissions about the subreddit) submission then it
             # is not of interest
             if submission.link_flair_text == "META":
@@ -32,7 +33,7 @@ class RedditScraper:
 
     def get_judgement(self, submission_id: str) -> Judgement:
         # TODO get the flair for the submission (which will
-        #   be added a few days after the submission is made)
+        #   be added 18 hours after the submission is made)
         #   and convert it to a Judgement
         return Judgement.ESH
 

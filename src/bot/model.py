@@ -11,7 +11,7 @@ class Judgement(Enum):
     NTA = "not the asshole"
     ESH = "everyone sucks here"
     NAH = "no assholes here"
-    NEI = "not enough information"
+    INFO = "not enough information"
 
     @staticmethod
     def from_reddit_link_flair_text(flair_text: str):
@@ -32,7 +32,7 @@ class Judgement(Enum):
         elif flair_text == "Asshole":
             return Judgement.YTA
 
-        elif flair_text == "Everyone Is Shit Here":
+        elif flair_text == "Everyone Sucks":
             return Judgement.ESH
 
         else:
