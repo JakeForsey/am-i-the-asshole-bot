@@ -21,7 +21,7 @@ class RedditScraper:
             user_agent=user_agent
         )
 
-    def get_submissions(self) -> Iterable[AITASubmission]:
+    def get_aita_submissions(self) -> Iterable[AITASubmission]:
         for submission in self._reddit.subreddit('AmItheAsshole').hot(limit=100):
             # If its a meta (submissions about the subreddit) submission then it
             # is not of interest
@@ -37,7 +37,7 @@ class RedditScraper:
         return Judgement.ESH
 
 
-class SubmissionDAO:
+class AITASubmissionDAO:
 
     def __init__(self):
         pass
@@ -47,6 +47,3 @@ class SubmissionDAO:
 
     def submissions(self) -> List[AITASubmission]:
         return [AITASubmission()]
-
-    def submission_by_id(self, submission_id: str) -> AITASubmission:
-        return AITASubmission()

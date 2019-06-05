@@ -1,6 +1,6 @@
 from src.bot.config import get_config
 from src.bot.data import RedditScraper
-from src.bot.data import SubmissionDAO
+from src.bot.data import AITASubmissionDAO
 
 
 def scape():
@@ -12,9 +12,9 @@ def scape():
         user_agent=cfg.integration.reddit.user_agent
     )
 
-    dao = SubmissionDAO()
+    dao = AITASubmissionDAO()
 
-    for submission in scraper.get_submissions():
+    for submission in scraper.get_aita_submissions():
         print(submission)
         dao.insert(submission)
 
