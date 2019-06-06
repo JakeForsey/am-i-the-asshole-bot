@@ -27,7 +27,11 @@ def main(args):
         user_agent=CONFIG.integration.reddit.user_agent
     )
 
-    anubis = Anubis()
+    anubis = Anubis.summon(
+        "AWDLSTM",
+        train_proportion=0.7,
+        tmp_data_path="..\..\data\awd_lstm"
+    )
 
     if args.mode == "scrape":
         LOGGER.info("Scraping data for Anubis")
