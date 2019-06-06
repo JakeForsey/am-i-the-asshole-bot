@@ -44,7 +44,8 @@ def main(args):
         LOGGER.info("Training Anubis")
 
         anubis.train(
-            list(dao.aita_submissions())
+            list(dao.aita_submissions()),
+            limit=None
         )
 
     elif args.mode == "judge":

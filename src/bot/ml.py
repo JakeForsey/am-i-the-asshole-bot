@@ -1,15 +1,15 @@
 from abc import ABCMeta, abstractmethod
-
 import logging
 import random
 from typing import List
 from typing import Tuple
+from typing import Optional
 
+from fastai.text import AWD_LSTM
+from fastai.text import language_model_learner
 from fastai.text import TextLMDataBunch
 from fastai.text import TextClasDataBunch
-from fastai.text import language_model_learner
 from fastai.text import text_classifier_learner
-from fastai.text import AWD_LSTM
 import pandas as pd
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -35,7 +35,8 @@ class BaseModel(metaclass=ABCMeta):
     @abstractmethod
     def train(
             self,
-            aita_submissions: List[AITASubmission]
+            aita_submissions: List[AITASubmission],
+            limit: Optional[int] = None
     ):
         pass
 
@@ -87,33 +88,48 @@ class AWDLSTM(BaseModel):
 
     def train(
             self,
-            aita_submissions: List[AITASubmission]
+            aita_submissions: List[AITASubmission],
+            limit: Optional[int] = None
     ):
-        train, test = self.train_test_split(aita_submissions)
 
-        train_df = pd.DataFrame(train[:128])
-        test_df = pd.DataFrame(test[:128])
+        train, valid_test = self.train_test_split(aita_submissions)
+        valid, test = self.train_test_split(valid_test)
+
+        if limit:
+            train = train[:limit]
+            test = test[:limit]
+            valid = valid[:limit]
+
+        train_df = pd.DataFrame(train)
+        valid_df = pd.DataFrame(valid)
+        test_df = pd.DataFrame(test)
 
         LOGGER.info("Initialising data set for language modelling")
         lm_data = TextLMDataBunch.from_df(
             self._tmp_data_path,
             train_df=train_df,
-            valid_df=test_df,
+            valid_df=valid_df,
+            test_df=test_df,
             text_cols="submission_body",
             bs=64,
-            min_freq=4,
-
+            min_freq=2,
         )
+        LOGGER.info("Language model data bunch: %s", lm_data)
 
         LOGGER.info("Initialising data set for classification")
         clf_data = TextClasDataBunch.from_df(
             self._tmp_data_path,
             train_df=train_df,
-            valid_df=test_df,
+            valid_df=valid_df,
+            test_df=test_df,
             vocab=lm_data.train_ds.vocab,
             text_cols="submission_body",
+            label_cols="reddit_judgement",
             bs=64
         )
+        LOGGER.info("Classification data bunch: %s", clf_data)
+
+        LOGGER.info("Vocabulary contains %s words", len(lm_data.train_ds.vocab.itos))
 
         LOGGER.info("Training language model encoder")
         # Fine tune the pretrained language model on the aita submissions
@@ -132,11 +148,11 @@ class AWDLSTM(BaseModel):
         model.fit_one_cycle(1, slice(1e-5, 1e-3), moms=(0.8, 0.7))
 
         self._model = model
+
         LOGGER.info("Training complete")
 
-        self._model.save("model")
-
-        print(self._model.metrics)
+        #print(self._model.metrics[0]())
+        print(self._model.predict("I killed a guy and he deserved it because he was ugly"))
 
 
 class GradientBoosting(BaseModel):
@@ -158,9 +174,14 @@ class GradientBoosting(BaseModel):
 
     def train(
             self,
-            aita_submissions: List[AITASubmission]
+            aita_submissions: List[AITASubmission],
+            limit: Optional[int] = None
     ):
         train, test = self.train_test_split(aita_submissions)
+
+        if limit:
+            train = train[:limit]
+            test = test[:limit]
 
         LOGGER.info("Fitting Anubis pipeline")
         self._pipeline.fit(
