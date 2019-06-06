@@ -8,6 +8,7 @@ from typing import Tuple
 from fastai.text import TextLMDataBunch
 from fastai.text import TextClasDataBunch
 from fastai.text import language_model_learner
+from fastai.text import text_classifier_learner
 from fastai.text import AWD_LSTM
 import pandas as pd
 from sklearn.ensemble import GradientBoostingClassifier
@@ -79,8 +80,10 @@ class AWDLSTM(BaseModel):
         super().__init__(*args, **kwargs)
         self._tmp_data_path = tmp_data_path
 
+        self._model = None
+
     def judge(self, submission: AITASubmission):
-        pass
+        self._model.predict(submission.submission_body)
 
     def train(
             self,
@@ -88,14 +91,15 @@ class AWDLSTM(BaseModel):
     ):
         train, test = self.train_test_split(aita_submissions)
 
-        train_df = pd.DataFrame(train)
-        test_df = pd.DataFrame(test)
+        train_df = pd.DataFrame(train[:10])
+        test_df = pd.DataFrame(test[:10])
 
         lm_data = TextLMDataBunch.from_df(
             self._tmp_data_path,
             train_df=train_df,
             valid_df=test_df,
-            text_cols="submission_body"
+            text_cols="submission_body",
+            bs=10
         )
 
         clf_data = TextClasDataBunch.from_df(
@@ -103,15 +107,29 @@ class AWDLSTM(BaseModel):
             train_df=train_df,
             valid_df=test_df,
             vocab=lm_data.train_ds.vocab,
-            text_cols="submission_body"
+            text_cols="submission_body",
+            bs=10
         )
 
-        learner = language_model_learner(
-            lm_data, AWD_LSTM
-        )
-        learner.unfreeze()
-        results = learner.fit_one_cycle(4, slice(1e-2), moms=(0.8, 0.7))
-        print(results)
+        LOGGER.info("Training language model encoder")
+
+        # Fine tune the pretrained language model on the aita submissions
+        encoder = language_model_learner(lm_data, AWD_LSTM)
+        encoder.unfreeze()
+        encoder.fit_one_cycle(1, slice(1e-2), moms=(0.8, 0.7))
+        encoder.save_encoder('enc')
+
+        LOGGER.info("Training classifier")
+        # Train a classifier using the fine tuned language model above
+        # as an encoder
+        model = text_classifier_learner(clf_data, AWD_LSTM)
+        model.load_encoder('enc')
+        model.fit_one_cycle(4, moms=moms)
+        model.unfreeze()
+        model.fit_one_cycle(8, slice(1e-5, 1e-3), moms=moms)
+
+        self._model = model
+        LOGGER.info("Training complete")
 
 
 class GradientBoosting(BaseModel):

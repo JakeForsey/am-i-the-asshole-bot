@@ -30,7 +30,7 @@ def main(args):
     anubis = Anubis.summon(
         "AWDLSTM",
         train_proportion=0.7,
-        tmp_data_path="..\..\data\awd_lstm"
+        tmp_data_path="..\..\data\\awd_lstm"
     )
 
     if args.mode == "scrape":
