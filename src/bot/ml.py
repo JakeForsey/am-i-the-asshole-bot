@@ -91,28 +91,31 @@ class AWDLSTM(BaseModel):
     ):
         train, test = self.train_test_split(aita_submissions)
 
-        train_df = pd.DataFrame(train[:10])
-        test_df = pd.DataFrame(test[:10])
+        train_df = pd.DataFrame(train[:128])
+        test_df = pd.DataFrame(test[:128])
 
+        LOGGER.info("Initialising data set for language modelling")
         lm_data = TextLMDataBunch.from_df(
             self._tmp_data_path,
             train_df=train_df,
             valid_df=test_df,
             text_cols="submission_body",
-            bs=10
+            bs=64,
+            min_freq=4,
+
         )
 
+        LOGGER.info("Initialising data set for classification")
         clf_data = TextClasDataBunch.from_df(
             self._tmp_data_path,
             train_df=train_df,
             valid_df=test_df,
             vocab=lm_data.train_ds.vocab,
             text_cols="submission_body",
-            bs=10
+            bs=64
         )
 
         LOGGER.info("Training language model encoder")
-
         # Fine tune the pretrained language model on the aita submissions
         encoder = language_model_learner(lm_data, AWD_LSTM)
         encoder.unfreeze()
@@ -124,12 +127,16 @@ class AWDLSTM(BaseModel):
         # as an encoder
         model = text_classifier_learner(clf_data, AWD_LSTM)
         model.load_encoder('enc')
-        model.fit_one_cycle(4, moms=moms)
+        model.fit_one_cycle(1, moms=(0.8, 0.7))
         model.unfreeze()
-        model.fit_one_cycle(8, slice(1e-5, 1e-3), moms=moms)
+        model.fit_one_cycle(1, slice(1e-5, 1e-3), moms=(0.8, 0.7))
 
         self._model = model
         LOGGER.info("Training complete")
+
+        self._model.save("model")
+
+        print(self._model.metrics)
 
 
 class GradientBoosting(BaseModel):
