@@ -68,15 +68,10 @@ class AITASubmissionDAO:
     ) VALUES (?, ?, ?, ?, ?, ?)
     """
 
-    UPDATE_SUBMISSION_SQL = """
-    UPDATE aita_submission(
-        submission_id,
-        submission_title,
-        submission_body,
-        submitted_at_utc,
-        reddit_judgement,
-        annubis_judgement
-    ) VALUES (?, ?, ?, ?, ?, ?)
+    UPDATE_REDDIT_JUDGEMENT_SQL = """
+    UPDATE aita_submission
+    SET reddit_judgement = ?
+    WHERE submission_id = ?
     """
 
     def __init__(self, db_path):
@@ -94,11 +89,11 @@ class AITASubmissionDAO:
         )
         self._conn.commit()
 
-    def update(self, aita_submission: AITASubmission):
+    def update_reddit_judgment(self, aita_submission: AITASubmission):
         cursor = self._conn.cursor()
         cursor.execute(
-            self.UPDATE_SUBMISSION_SQL,
-            self.aita_submission_to_record(aita_submission)
+            self.UPDATE_REDDIT_JUDGEMENT_SQL,
+            (aita_submission.reddit_judgement.name, aita_submission.submission_id)
         )
         self._conn.commit()
 
