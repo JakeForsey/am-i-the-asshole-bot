@@ -111,8 +111,8 @@ class AWDLSTM(BaseModel):
             valid_df=valid_df,
             test_df=test_df,
             text_cols="submission_body",
-            bs=64,
-            min_freq=2,
+            bs=32,
+            min_freq=3,
         )
         LOGGER.info("Language model data bunch: %s", lm_data)
 
@@ -125,7 +125,7 @@ class AWDLSTM(BaseModel):
             vocab=lm_data.train_ds.vocab,
             text_cols="submission_body",
             label_cols="reddit_judgement",
-            bs=64
+            bs=8
         )
         LOGGER.info("Classification data bunch: %s", clf_data)
 
@@ -133,21 +133,21 @@ class AWDLSTM(BaseModel):
 
         LOGGER.info("Training language model encoder")
         # Fine tune the pretrained language model on the aita submissions
-        encoder = language_model_learner(lm_data, AWD_LSTM)
-        encoder.unfreeze()
-        encoder.fit_one_cycle(1, slice(1e-2), moms=(0.8, 0.7))
-        encoder.save_encoder('enc')
+        learn = language_model_learner(lm_data, AWD_LSTM)
+        learn.unfreeze()
+        learn.fit_one_cycle(4, slice(1e-2), moms=(0.8, 0.7))
+        learn.save_encoder('enc')
 
         LOGGER.info("Training classifier")
         # Train a classifier using the fine tuned language model above
         # as an encoder
-        model = text_classifier_learner(clf_data, AWD_LSTM)
-        model.load_encoder('enc')
-        model.fit_one_cycle(1, moms=(0.8, 0.7))
-        model.unfreeze()
-        model.fit_one_cycle(1, slice(1e-5, 1e-3), moms=(0.8, 0.7))
+        learn = text_classifier_learner(clf_data, AWD_LSTM)
+        learn.load_encoder('enc')
+        learn.fit_one_cycle(4, moms=(0.8, 0.7))
+        learn.unfreeze()
+        learn.fit_one_cycle(8, slice(1e-5, 1e-3), moms=(0.8, 0.7))
 
-        self._model = model
+        self._model = learn
 
         LOGGER.info("Training complete")
 
