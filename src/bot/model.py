@@ -14,6 +14,9 @@ class Judgement(Enum):
 
     @staticmethod
     def from_reddit_link_flair_text(flair_text: str):
+        if flair_text is None:
+            return None
+
         flair_text = flair_text.lower()
         if flair_text == "Not the A-hole".lower():
             return Judgement.NTA
