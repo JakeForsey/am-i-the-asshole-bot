@@ -39,10 +39,13 @@ def main(args):
     elif args.mode == "update":
         LOGGER.info("Updating Reddit judgements")
         aita_submissions = dao.aita_submissions(where_clause="WHERE reddit_judgement is NULL")
+
         for aita_submission in aita_submissions:
             judgement = scraper.get_judgement(aita_submission.submission_id)
-            aita_submission = aita_submission._replace(reddit_judgement=judgement)
-            dao.update_reddit_judgment(aita_submission)
+
+            if judgement:
+                aita_submission = aita_submission._replace(reddit_judgement=judgement)
+                dao.update_reddit_judgment(aita_submission)
 
     elif args.mode == "train":
         LOGGER.info("Training Anubis")
