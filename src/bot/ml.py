@@ -6,10 +6,12 @@ from typing import Tuple
 from typing import Optional
 
 from fastai.text import AWD_LSTM
+from fastai.text import ClassificationInterpretation
 from fastai.text import language_model_learner
 from fastai.text import TextLMDataBunch
 from fastai.text import TextClasDataBunch
 from fastai.text import text_classifier_learner
+import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -133,26 +135,43 @@ class AWDLSTM(BaseModel):
 
         LOGGER.info("Training language model encoder")
         # Fine tune the pretrained language model on the aita submissions
-        learn = language_model_learner(lm_data, AWD_LSTM)
-        learn.unfreeze()
-        learn.fit_one_cycle(4, slice(1e-2), moms=(0.8, 0.7))
-        learn.save_encoder('enc')
+        learner = language_model_learner(lm_data, AWD_LSTM)
+        learner.unfreeze()
+        learner.fit_one_cycle(10)
+        learner.save_encoder('enc')
 
         LOGGER.info("Training classifier")
         # Train a classifier using the fine tuned language model above
         # as an encoder
-        learn = text_classifier_learner(clf_data, AWD_LSTM)
-        learn.load_encoder('enc')
-        learn.fit_one_cycle(4, moms=(0.8, 0.7))
-        learn.unfreeze()
-        learn.fit_one_cycle(8, slice(1e-5, 1e-3), moms=(0.8, 0.7))
+        learner = text_classifier_learner(clf_data, AWD_LSTM)
+        learner.load_encoder('enc')
+        learner.fit_one_cycle(10)
+        learner.unfreeze()
+        learner.fit_one_cycle(20)
 
-        self._model = learn
+        interp = ClassificationInterpretation.from_learner(learner)
+        interp.plot_confusion_matrix(title='Confusion matrix')
+        plt.show()
+
+        self._model = learner
 
         LOGGER.info("Training complete")
 
-        #print(self._model.metrics[0]())
-        print(self._model.predict("I killed a guy and he deserved it because he was ugly"))
+        print(self._model.predict("""
+        Wife and I got married as widowers. My late wife and daughter passed away in an accident. My daughter was only 1 when she passed away. My current wife had 3 yo twins when we got married. The girls are 15 now.
+
+        So, yesterday when wife and I were watching a movie, she told me that the girls were planning a surprise for me on their birthday. And when I asked her what it was, she told me that they wanted me to adopt them. I was really happy, because it meant that I had done a good job, but unfortunately I cannot adopt them. I'm actually glad that my wife told me that. A surprise would have caught me off guard.
+        
+        The thing is, my wife and I had discussed about this when they were young. I made it clear that I didn't want to adopt anyone or have more children. Call it coping up with my daughter's death or whatever, but I've never felt comfortable thinking about it. My wife is now asking me to say yes.
+        
+        I've been there for them and I'll always be there for them. I love them but I don't think I'll be comfortable adopting them. WIBTA here?
+        
+        """))
+        print(self._model.predict("""
+        Friend visited me in Japan from US. She’s borderline obese. She’s been here for few weeks, I take her to interesting places, she gets some weird looks because of her weight. She noticed too. She said that it was because she’s white and looks different (I’m white too, there are lots of white people here and No one looks at them weirdly) I just agreed with it. Few days later she started getting frustrated, she asked why were people looking at her again and I said as politely as I could. “Don’t take this the wrong way, but there aren’t lots of chubby people here. As you noticed almost everyone is thin and sometimes people are surprised or caught off guard when they see a bigger person”
+
+        She just went to her room without saying a word. She’s been acting weird and distant and we haven’t brought this talk up after that.
+        """))
 
 
 class GradientBoosting(BaseModel):
