@@ -1,13 +1,34 @@
 from typing import Iterable
+from typing import Iterator
 from typing import List
+from typing import TextIO
 from typing import Tuple
+from typing import Union
 
+import json
 import praw
 import sqlite3
 
 from src.bot.model import Judgement
 from src.bot.model import AITASubmission
 from src.bot.model import from_reddit_submission
+from src.bot.model import from_dict_submission
+
+
+class RedditParser:
+    """Parses data from http://files.pushshift.io/reddit/ into AITASubmissions"""
+    def __init__(self):
+        pass
+
+    def parse(self, file: Union[str, TextIO]) -> Iterator[AITASubmission]:
+        if isinstance(file, str):
+            file = open(file, "r")
+
+        for line in file:
+            submission_dict = json.loads(line)
+            if submission_dict.get("subreddit", "") == "AmItheAsshole":
+                print(submission_dict)
+                yield from_dict_submission(submission_dict)
 
 
 class RedditScraper:
