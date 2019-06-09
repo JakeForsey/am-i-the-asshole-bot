@@ -5,7 +5,6 @@ from src.bot import config
 from src.bot.ml import Anubis
 from src.bot.data import AITASubmissionDAO
 from src.bot.data import RedditScraper
-from src.bot.data import RedditParser
 
 
 CONFIG = config.get_config()
@@ -27,21 +26,24 @@ def main(args):
         client_secret=CONFIG.integration.reddit.client_secret,
         user_agent=CONFIG.integration.reddit.user_agent
     )
-    parser = RedditParser()
 
     anubis = Anubis()
 
     if args.mode == "scrape":
         LOGGER.info("Scraping data for Anubis")
 
-        # TODO (Jake or Sam) Make this run over and over on a schedule
-        for aita_submission in scraper.get_aita_submissions():
-            dao.insert(aita_submission)
+        if CONFIG.sources.pushshift.enabled:
+            LOGGER.info("Scraping data for Anubis from http://files.pushshift.io/reddit")
 
-    elif args.mode == "parse":
-        LOGGER.info("Parsing data from file")
-        for aita_submission in parser.parse(args.file):
-            dao.insert(aita_submission)
+            for aita_submission in scraper.get_pushshift_aita_submissions(
+                    CONFIG.sources.pushshift.urls
+            ):
+                dao.insert(aita_submission)
+
+        if CONFIG.sources.praw.enabled:
+            LOGGER.info("Scraping data for Anubis from the praw Reddit API")
+            for aita_submission in scraper.get_praw_submissions():
+                dao.insert(aita_submission)
 
     elif args.mode == "train":
         LOGGER.info("Training Anubis")
@@ -53,7 +55,7 @@ def main(args):
     elif args.mode == "judge":
         LOGGER.info("Judging people with Anubis")
 
-        for aita_submission in scraper.get_aita_submissions():
+        for aita_submission in scraper.get_praw_submissions():
             judgement = anubis.judge(aita_submission)
 
             # TODO (Sam) Post the judgement on the submission with a witty comment
@@ -61,9 +63,8 @@ def main(args):
 
 if __name__ == "__main__":
     argument_parser = argparse.ArgumentParser()
-    argument_parser.add_argument("--mode", choices=["scrape", "train", "judge", "parse"])
+    argument_parser.add_argument("--mode", choices=["scrape", "train", "judge"])
     argument_parser.add_argument("--logging_level", default=logging.DEBUG)
-    argument_parser.add_argument("--file", help="File to be parsed by RedditParser")
 
     args = argument_parser.parse_args()
 

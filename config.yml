@@ -7,3 +7,24 @@ integration:
 
   database:
     db_path: aita_db.db
+
+sources:
+  pushshift:
+    enabled: False
+    urls:
+      - http://files.pushshift.io/reddit/submissions/RS_2018-01.xz
+      - http://files.pushshift.io/reddit/submissions/RS_2018-02.xz
+      - http://files.pushshift.io/reddit/submissions/RS_2018-03.xz
+      - http://files.pushshift.io/reddit/submissions/RS_2018-04.xz
+      - http://files.pushshift.io/reddit/submissions/RS_2018-05.xz
+      - http://files.pushshift.io/reddit/submissions/RS_2018-06.xz
+      - http://files.pushshift.io/reddit/submissions/RS_2018-07.xz
+      - http://files.pushshift.io/reddit/submissions/RS_2018-08.xz
+      - http://files.pushshift.io/reddit/submissions/RS_2018-09.xz
+      - http://files.pushshift.io/reddit/submissions/RS_2018-10.xz
+      - http://files.pushshift.io/reddit/submissions/RS_2018-11.zst
+      - http://files.pushshift.io/reddit/submissions/RS_2018-12.zst
+      - http://files.pushshift.io/reddit/submissions/RS_2019-01.zst
+      - http://files.pushshift.io/reddit/submissions/RS_2019-02.zst
+  praw:
+    enabled: False

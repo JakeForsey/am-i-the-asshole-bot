@@ -1,11 +1,10 @@
+import logging
 from typing import Iterable
 from typing import Iterator
 from typing import List
-from typing import TextIO
 from typing import Tuple
-from typing import Union
 
-import json
+import pandas as pd
 import praw
 import sqlite3
 
@@ -15,20 +14,7 @@ from src.bot.model import from_reddit_submission
 from src.bot.model import from_dict_submission
 
 
-class RedditParser:
-    """Parses data from http://files.pushshift.io/reddit/ into AITASubmissions"""
-    def __init__(self):
-        pass
-
-    def parse(self, file: Union[str, TextIO]) -> Iterator[AITASubmission]:
-        if isinstance(file, str):
-            file = open(file, "r")
-
-        for line in file:
-            submission_dict = json.loads(line)
-            if submission_dict.get("subreddit", "") == "AmItheAsshole":
-                print(submission_dict)
-                yield from_dict_submission(submission_dict)
+LOGGER = logging.getLogger(__name__)
 
 
 class RedditScraper:
@@ -45,7 +31,57 @@ class RedditScraper:
             user_agent=user_agent
         )
 
-    def get_aita_submissions(self) -> Iterable[AITASubmission]:
+    def get_pushshift_aita_submissions(self, urls: List[str]) -> Iterator[AITASubmission]:
+        """
+        Downloads data from http://files.pushshift.io/reddit/submissions/ and
+        converts it into AITASubmissions.
+
+        :param urls: A list of urls to scrape or a list of file paths
+        :return: yields AITASubmissions
+        """
+        processed_submissions = 0
+        processed_aita_submissions = 0
+
+        for url_i, url in enumerate(urls):
+            LOGGER.info("Processing url (%s / %s) %s ", url_i + 1, len(urls), url)
+
+            try:
+                LOGGER.debug("Initialising a generator for")
+
+                # Create a generator that yields a few submissions at a time
+                # pandas handles decompression by itself.
+                submission_iterator = pd.read_json(
+                    url,
+                    lines=True, chunksize=1000,
+                    dtype={
+                        "id": str,
+                        "title": str,
+                        "selftext": str,
+                        "link_flair_text": str,
+                        "submitted_at": float
+                    }
+                )
+                LOGGER.debug("Iterating over submissions")
+                for chunk in submission_iterator:
+                    for submission_row in chunk.to_dict(orient='records'):
+                        if processed_submissions % 20 == 0:
+                            LOGGER.info("Processed: %s reddit submissions", processed_submissions)
+                            LOGGER.info("Processed: %s aita submissions", processed_aita_submissions)
+
+                        if submission_row.get("subreddit", "") != "AmItheAsshole":
+                            processed_submissions += 1
+                            continue
+
+                        processed_aita_submissions += 1
+                        if submission_row["link_flair_text"] == "META":
+                            continue
+
+                        yield from_dict_submission(submission_row)
+
+            except Exception as e:
+                LOGGER.error("Failed to process something in %s", url, exc_info=e)
+
+    def get_praw_submissions(self) -> Iterable[AITASubmission]:
         flair_texts = []
         for period in ["all", "year", "month", "week", "day"]:
             for submission in self._reddit.subreddit('AmItheAsshole').top(period, limit=10000000):
