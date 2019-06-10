@@ -5,6 +5,7 @@ from src.bot import config
 from src.bot.ml import Anubis
 from src.bot.data import AITASubmissionDAO
 from src.bot.data import RedditScraper
+from src.bot.cache import FileURLCache
 
 
 CONFIG = config.get_config()
@@ -36,7 +37,7 @@ def main(args):
             LOGGER.info("Scraping data for Anubis from http://files.pushshift.io/reddit")
 
             for aita_submission in scraper.get_pushshift_aita_submissions(
-                    CONFIG.sources.pushshift.urls
+                    FileURLCache("../../data/pushshift", CONFIG.sources.pushshift.urls)
             ):
                 dao.insert(aita_submission)
 

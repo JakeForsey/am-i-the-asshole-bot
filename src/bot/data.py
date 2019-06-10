@@ -52,7 +52,7 @@ class RedditScraper:
                 # pandas handles decompression by itself.
                 submission_iterator = pd.read_json(
                     url,
-                    lines=True, chunksize=1000,
+                    lines=True, chunksize=10000,
                     dtype={
                         "id": str,
                         "title": str,
@@ -64,7 +64,7 @@ class RedditScraper:
                 LOGGER.debug("Iterating over submissions")
                 for chunk in submission_iterator:
                     for submission_row in chunk.to_dict(orient='records'):
-                        if processed_submissions % 20 == 0:
+                        if processed_submissions % 10000 == 0:
                             LOGGER.info("Processed: %s reddit submissions", processed_submissions)
                             LOGGER.info("Processed: %s aita submissions", processed_aita_submissions)
 

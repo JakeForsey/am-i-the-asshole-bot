@@ -10,7 +10,7 @@ integration:
 
 sources:
   pushshift:
-    enabled: False
+    enabled: True
     urls:
       - http://files.pushshift.io/reddit/submissions/RS_2018-01.xz
       - http://files.pushshift.io/reddit/submissions/RS_2018-02.xz
