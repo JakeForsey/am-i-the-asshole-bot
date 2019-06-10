@@ -5,7 +5,7 @@ from src.bot import config
 from src.bot.ml import Anubis
 from src.bot.data import AITASubmissionDAO
 from src.bot.data import RedditScraper
-from src.bot.plot import plotter
+from src.bot.plot import Plotter
 
 CONFIG = config.get_config()
 LOGGER = logging.getLogger(__name__)
@@ -52,7 +52,8 @@ def main(args):
 
     elif args.mode == "plotter":
         LOGGER.info("Plotter arg passed")
-        plotter.loadDB(plotter)
+        anubis_plotter = Plotter(dao)
+        anubis_plotter.visualise_data()
 
 if __name__ == "__main__":
     argument_parser = argparse.ArgumentParser()

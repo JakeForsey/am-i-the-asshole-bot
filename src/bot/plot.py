@@ -3,11 +3,12 @@ import sqlite3
 
 LOGGER = logging.getLogger(__name__)
 
-class plotter:
 
-    def loadDB(self):
-     LOGGER.info('load data')
+class Plotter:
+    def __init__(self, dao):
+        self._dao = dao
 
-     #1 load sqlite data
-     #2 do some magic with it
-     #3 plot with matplotlib :-)
+    def visualise_data(self):
+        LOGGER.info('please work')
+        return self
+
