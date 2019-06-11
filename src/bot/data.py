@@ -40,7 +40,7 @@ class RedditScraper:
         :return: yields AITASubmissions
         """
         processed_submissions = 0
-        processed_aita_submissions = 0
+        processed_relevant_submissions = 0
 
         for url_i, url in enumerate(urls):
             LOGGER.info("Processing url (%s / %s) %s ", url_i + 1, len(urls), url)
@@ -64,17 +64,16 @@ class RedditScraper:
                 LOGGER.debug("Iterating over submissions")
                 for chunk in submission_iterator:
                     for submission_row in chunk.to_dict(orient='records'):
-                        if processed_submissions % 10000 == 0:
-                            LOGGER.info("Processed: %s reddit submissions", processed_submissions)
-                            LOGGER.info("Processed: %s aita submissions", processed_aita_submissions)
+                        if processed_submissions % 100000 == 0:
+                            LOGGER.info("Processing url (%s / %s) %s ", url_i + 1, len(urls), url)
+                            LOGGER.info("Processed: %s irrelevant submissions", processed_submissions)
+                            LOGGER.info("Processed: %s relevant submissions", processed_relevant_submissions)
 
-                        if submission_row.get("subreddit", "") != "AmItheAsshole":
-                            processed_submissions += 1
+                        processed_submissions += 1
+                        if self._is_irrelevant(submission_row):
                             continue
 
-                        processed_aita_submissions += 1
-                        if submission_row["link_flair_text"] == "META":
-                            continue
+                        processed_relevant_submissions += 1
 
                         yield from_dict_submission(submission_row)
 
@@ -82,15 +81,10 @@ class RedditScraper:
                 LOGGER.error("Failed to process something in %s", url, exc_info=e)
 
     def get_praw_submissions(self) -> Iterable[AITASubmission]:
-        flair_texts = []
         for period in ["all", "year", "month", "week", "day"]:
             for submission in self._reddit.subreddit('AmItheAsshole').top(period, limit=10000000):
 
-                flair_texts.append(submission.link_flair_text)
-
-                # If its a meta (submissions about the subreddit) submission then it
-                # is not of interest
-                if submission.link_flair_text == "META":
+                if self._is_irrelevant(submission):
                     continue
 
                 yield from_reddit_submission(submission)
@@ -100,6 +94,26 @@ class RedditScraper:
         #   be added 18 hours after the submission is made)
         #   and convert it to a Judgement
         return Judgement.ESH
+
+    def _is_irrelevant(self, submission):
+        try:
+            subreddit = submission.get("subreddit", "")
+        except:
+            subreddit = submission.subreddit.fullname
+
+        try:
+            link_flair_text = submission.get("link_flair_text", "")
+        except:
+            link_flair_text = submission.link_flair_text
+
+        if subreddit.lower() != "AmItheAsshole".lower():
+            return True
+
+        if link_flair_text.lower() == "META".lower():
+            return True
+
+        else:
+            return False
 
 
 class AITASubmissionDAO:
