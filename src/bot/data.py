@@ -3,10 +3,12 @@ from typing import Iterable
 from typing import Iterator
 from typing import List
 from typing import Tuple
+from typing import Union
 
 import pandas as pd
 import praw
 import sqlite3
+from praw.models.reddit.submission import Submission as PRAWSubmission
 
 from src.bot.model import Judgement
 from src.bot.model import AITASubmission
@@ -82,7 +84,7 @@ class RedditScraper:
 
     def get_praw_submissions(self) -> Iterable[AITASubmission]:
         for period in ["all", "year", "month", "week", "day"]:
-            for submission in self._reddit.subreddit('AmItheAsshole').top(period, limit=10000000):
+            for submission in self._reddit.subreddit('AmItheAsshole').top(period, limit=100000):
 
                 if self._is_irrelevant(submission):
                     continue
@@ -95,7 +97,13 @@ class RedditScraper:
         #   and convert it to a Judgement
         return Judgement.ESH
 
-    def _is_irrelevant(self, submission):
+    def _is_irrelevant(self, submission: Union[PRAWSubmission, dict]) -> bool:
+        """
+        Checks whether a submission is relevant to the project.
+
+        :param submission: Either a submission dictionary or a praw.Submission
+        :return: whether or not the submission is relevant
+        """
         try:
             subreddit = submission.get("subreddit", "")
         except:
