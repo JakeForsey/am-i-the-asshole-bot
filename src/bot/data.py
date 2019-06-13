@@ -88,6 +88,8 @@ class RedditScraper:
             lambda: self._reddit.subreddit('AmITheAsshole').hot("hour", limit=1000),
             lambda: self._reddit.subreddit('AmITheAsshole').hot("day", limit=1000),
             lambda: self._reddit.subreddit('AmITheAsshole').hot("week", limit=1000),
+            lambda: self._reddit.subreddit('AmITheAsshole').top("hour", limit=1000),
+            lambda: self._reddit.subreddit('AmITheAsshole').top("day", limit=1000),
         ]:
 
             for submission in f():
