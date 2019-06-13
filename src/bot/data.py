@@ -83,8 +83,14 @@ class RedditScraper:
                 LOGGER.error("Failed to process something in %s", url, exc_info=e)
 
     def get_praw_submissions(self) -> Iterable[AITASubmission]:
-        for period in ["all", "year", "month", "week", "day"]:
-            for submission in self._reddit.subreddit('AmItheAsshole').top(period, limit=100000):
+        for f in [
+            lambda: self._reddit.subreddit('AmItheAsshole').new(limit=1000),
+            lambda: self._reddit.subreddit('AmITheAsshole').hot("hour", limit=1000),
+            lambda: self._reddit.subreddit('AmITheAsshole').hot("day", limit=1000),
+            lambda: self._reddit.subreddit('AmITheAsshole').hot("week", limit=1000),
+        ]:
+
+            for submission in f():
 
                 if self._is_irrelevant(submission):
                     continue
@@ -104,19 +110,19 @@ class RedditScraper:
         :return: whether or not the submission is relevant
         """
         try:
-            subreddit = submission.get("subreddit", "")
+            subreddit_id = submission.get("subreddit_id", "")
         except:
-            subreddit = submission.subreddit.fullname
+            subreddit_id = submission.subreddit.fullname
 
         try:
             link_flair_text = submission.get("link_flair_text", "")
         except:
             link_flair_text = submission.link_flair_text
 
-        if subreddit.lower() != "AmItheAsshole".lower():
+        if subreddit_id != "t5_2xhvq":
             return True
 
-        if link_flair_text.lower() == "META".lower():
+        if link_flair_text == "META":
             return True
 
         else:
