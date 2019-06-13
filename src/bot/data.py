@@ -39,10 +39,9 @@ class RedditScraper:
                 yield from_reddit_submission(submission)
 
     def get_judgement(self, submission_id: str) -> Judgement:
-        # TODO get the flair for the submission (which will
-        #   be added 18 hours after the submission is made)
-        #   and convert it to a Judgement
-        return Judgement.ESH
+        submission = self._reddit.submission(submission_id)
+
+        return Judgement.from_reddit_link_flair_text(submission.link_flair_text)
 
 
 class AITASubmissionDAO:
@@ -69,6 +68,12 @@ class AITASubmissionDAO:
     ) VALUES (?, ?, ?, ?, ?, ?)
     """
 
+    UPDATE_REDDIT_JUDGEMENT_SQL = """
+    UPDATE aita_submission
+    SET reddit_judgement = ?
+    WHERE submission_id = ?
+    """
+
     def __init__(self, db_path):
         self._conn = sqlite3.connect(db_path)
         self._conn.row_factory = sqlite3.Row
@@ -84,9 +89,17 @@ class AITASubmissionDAO:
         )
         self._conn.commit()
 
-    def aita_submissions(self) -> List[AITASubmission]:
+    def update_reddit_judgment(self, aita_submission: AITASubmission):
         cursor = self._conn.cursor()
-        for row in cursor.execute('SELECT * FROM aita_submission'):
+        cursor.execute(
+            self.UPDATE_REDDIT_JUDGEMENT_SQL,
+            (aita_submission.reddit_judgement.name, aita_submission.submission_id)
+        )
+        self._conn.commit()
+
+    def aita_submissions(self, where_clause: str = "") -> List[AITASubmission]:
+        cursor = self._conn.cursor()
+        for row in cursor.execute(f'SELECT * FROM aita_submission {where_clause}'):
             yield AITASubmission(
                 **row
             )

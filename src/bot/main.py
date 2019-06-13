@@ -40,6 +40,17 @@ def main(args):
         for aita_submission in scraper.get_aita_submissions():
             dao.insert(aita_submission)
 
+    elif args.mode == "update":
+        LOGGER.info("Updating Reddit judgements")
+        aita_submissions = dao.aita_submissions(where_clause="WHERE reddit_judgement is NULL")
+
+        for aita_submission in aita_submissions:
+            judgement = scraper.get_judgement(aita_submission.submission_id)
+
+            if judgement:
+                aita_submission = aita_submission._replace(reddit_judgement=judgement)
+                dao.update_reddit_judgment(aita_submission)
+
     elif args.mode == "train":
         LOGGER.info("Training Anubis")
 
@@ -59,7 +70,7 @@ def main(args):
 
 if __name__ == "__main__":
     argument_parser = argparse.ArgumentParser()
-    argument_parser.add_argument("--mode", choices=["scrape", "train", "judge"])
+    argument_parser.add_argument("--mode", choices=["scrape", "train", "judge", "update"])
     argument_parser.add_argument("--logging_level", default=logging.DEBUG)
 
     args = argument_parser.parse_args()
