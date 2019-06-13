@@ -14,20 +14,23 @@ class Judgement(Enum):
 
     @staticmethod
     def from_reddit_link_flair_text(flair_text: str):
+        if flair_text is None:
+            return None
 
-        if flair_text == "Not the A-hole":
+        flair_text = flair_text.lower()
+        if flair_text == "Not the A-hole".lower():
             return Judgement.NTA
 
-        elif flair_text == "No A-holes here":
+        elif flair_text == "No A-holes here".lower():
             return Judgement.NAH
 
-        elif flair_text == "Asshole":
+        elif flair_text == "Asshole".lower():
             return Judgement.YTA
 
-        elif flair_text == "Everyone Sucks":
+        elif flair_text == "Everyone Sucks".lower():
             return Judgement.ESH
 
-        elif flair_text == "Not enough info":
+        elif flair_text == "Not enough info".lower():
             return Judgement.INFO
 
         else:
@@ -53,5 +56,19 @@ def from_reddit_submission(
         submission_body=reddit_submission.selftext,
         submitted_at_utc=reddit_submission.created_utc,
         reddit_judgement=Judgement.from_reddit_link_flair_text(reddit_submission.link_flair_text),
+        annubis_judgement=anubis_judgement
+    )
+
+
+def from_dict_submission(
+        json_submission,
+        anubis_judgement: Optional[Judgement] = None
+):
+    return AITASubmission(
+        submission_id=json_submission["id"],
+        submission_title=json_submission["title"],
+        submission_body=json_submission["selftext"],
+        submitted_at_utc=json_submission["created_utc"],
+        reddit_judgement=Judgement.from_reddit_link_flair_text(json_submission["link_flair_text"]),
         annubis_judgement=anubis_judgement
     )

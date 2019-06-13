@@ -5,6 +5,7 @@ from src.bot import config
 from src.bot.ml import Anubis
 from src.bot.data import AITASubmissionDAO
 from src.bot.data import RedditScraper
+from src.bot.cache import FileURLCache
 
 
 CONFIG = config.get_config()
@@ -36,9 +37,18 @@ def main(args):
     if args.mode == "scrape":
         LOGGER.info("Scraping data for Anubis")
 
-        # TODO (Jake or Sam) Make this run over and over on a schedule
-        for aita_submission in scraper.get_aita_submissions():
-            dao.insert(aita_submission)
+        if CONFIG.sources.pushshift.enabled:
+            LOGGER.info("Scraping data for Anubis from http://files.pushshift.io/reddit")
+
+            for aita_submission in scraper.get_pushshift_aita_submissions(
+                    FileURLCache("../../data/pushshift", CONFIG.sources.pushshift.urls)
+            ):
+                dao.insert(aita_submission)
+
+        if CONFIG.sources.praw.enabled:
+            LOGGER.info("Scraping data for Anubis from the praw Reddit API")
+            for aita_submission in scraper.get_praw_submissions():
+                dao.insert(aita_submission)
 
     elif args.mode == "update":
         LOGGER.info("Updating Reddit judgements")
@@ -62,7 +72,7 @@ def main(args):
     elif args.mode == "judge":
         LOGGER.info("Judging people with Anubis")
 
-        for aita_submission in scraper.get_aita_submissions():
+        for aita_submission in scraper.get_praw_submissions():
             judgement = anubis.judge(aita_submission)
 
             # TODO (Sam) Post the judgement on the submission with a witty comment
