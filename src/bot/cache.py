@@ -1,5 +1,6 @@
 from typing import List
 import os
+from pathlib import Path
 
 from urllib.parse import urlparse
 
@@ -9,7 +10,7 @@ class FileURLCache:
     Wraps a list of URLs, if a file is found for the URL then the file path
     is returned rather than the URL.
     """
-    def __init__(self, directory: str, urls: List[str]):
+    def __init__(self, directory: Path, urls: List[str]):
         self._directory = directory
         self._urls = urls
 
@@ -29,11 +30,11 @@ class FileURLCache:
             self._current_idx += 1
             return self._url_or_file(self._urls[self._current_idx - 1])
 
-    def _url_or_file(self, url: str):
+    def _url_or_file(self, url: str) -> str:
         parsed_url = urlparse(url)
         file_name = os.path.basename(parsed_url.path)
 
-        if file_name in os.listdir(self._directory):
-            return os.path.join(self._directory, file_name)
+        if file_name in [p.name for p in self._directory.iterdir()]:
+            return str(Path(self._directory, file_name))
         else:
             return url

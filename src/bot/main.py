@@ -1,5 +1,6 @@
 import argparse
 import logging
+from pathlib import Path
 
 from src.bot import config
 from src.bot.ml import Anubis
@@ -10,6 +11,7 @@ from src.bot.cache import FileURLCache
 
 CONFIG = config.get_config()
 LOGGER = logging.getLogger(__name__)
+ROOT_DIR = Path().resolve().parent.parent
 
 
 def main(args):
@@ -19,7 +21,7 @@ def main(args):
     """
 
     dao = AITASubmissionDAO(
-        CONFIG.integration.database.db_path
+        Path(Path.resolve().parent.parent, "data", CONFIG.integration.database.db_path)
     )
 
     scraper = RedditScraper(
@@ -31,7 +33,7 @@ def main(args):
     anubis = Anubis.summon(
         "AWDLSTM",
         train_proportion=0.7,
-        tmp_data_path="..\..\data\\awd_lstm"
+        tmp_data_path=Path(ROOT_DIR, "data", "awd_lstm")
     )
 
     if args.mode == "scrape":
@@ -41,7 +43,7 @@ def main(args):
             LOGGER.info("Scraping data for Anubis from http://files.pushshift.io/reddit")
 
             for aita_submission in scraper.get_pushshift_aita_submissions(
-                    FileURLCache("../../data/pushshift", CONFIG.sources.pushshift.urls)
+                    FileURLCache(Path(ROOT_DIR, "data", "pushshift"), CONFIG.sources.pushshift.urls)
             ):
                 dao.insert(aita_submission)
 
