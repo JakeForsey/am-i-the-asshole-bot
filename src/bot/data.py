@@ -85,9 +85,7 @@ class RedditScraper:
     def get_praw_submissions(self) -> Iterable[AITASubmission]:
         for f in [
             lambda: self._reddit.subreddit('AmItheAsshole').new(limit=1000),
-            lambda: self._reddit.subreddit('AmITheAsshole').hot("hour", limit=1000),
-            lambda: self._reddit.subreddit('AmITheAsshole').hot("day", limit=1000),
-            lambda: self._reddit.subreddit('AmITheAsshole').hot("week", limit=1000),
+            lambda: self._reddit.subreddit('AmITheAsshole').hot(limit=1000),
             lambda: self._reddit.subreddit('AmITheAsshole').top("hour", limit=1000),
             lambda: self._reddit.subreddit('AmITheAsshole').top("day", limit=1000),
         ]:
