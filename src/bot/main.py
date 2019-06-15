@@ -16,12 +16,22 @@ ROOT_DIR = Path().resolve().parent.parent
 
 def main(args):
     """
-    Runs the in one of the modes.
+    Runs the application in one of the following modes:
+     - scrape
+            Scrapes submissions to AITA from the reddit PRAW API or from pushshift
+     - update
+            Adds Reddit judgments to submissions which were scraped before the official
+            Reddit judgement was made.
+     - train
+            Train a model to classify submissions based on available data
+     - judge
+            Use a trained model to judge recent submissions to AITA
+
     :return: None
     """
 
     dao = AITASubmissionDAO(
-        Path(Path.resolve().parent.parent, "data", CONFIG.integration.database.db_path)
+        Path(Path().resolve().parent.parent, "data", CONFIG.integration.database.db_path)
     )
 
     scraper = RedditScraper(
