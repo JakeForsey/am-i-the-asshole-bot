@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Iterable
 from typing import Iterator
 from typing import List
@@ -48,7 +49,7 @@ class RedditScraper:
             LOGGER.info("Processing url (%s / %s) %s ", url_i + 1, len(urls), url)
 
             try:
-                LOGGER.debug("Initialising a generator for")
+                LOGGER.debug("Initialising a generator for %s", url)
 
                 # Create a generator that yields a few submissions at a time
                 # pandas handles decompression by itself.
@@ -153,8 +154,8 @@ class AITASubmissionDAO:
     WHERE submission_id = ?
     """
 
-    def __init__(self, db_path):
-        self._conn = sqlite3.connect(db_path)
+    def __init__(self, db_path: Path):
+        self._conn = sqlite3.connect(str(db_path))
         self._conn.row_factory = sqlite3.Row
 
         cursor = self._conn.cursor()
