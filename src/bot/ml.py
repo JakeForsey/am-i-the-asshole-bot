@@ -31,37 +31,60 @@ class BaseModel(metaclass=ABCMeta):
         self._train_proportion = train_proportion
 
     @abstractmethod
-    def judge(self, submission: AITASubmission) -> Judgement:
+    def _judge(self, submission: AITASubmission) -> Judgement:
         pass
 
     @abstractmethod
-    def train(
+    def _train(
             self,
-            aita_submissions: List[AITASubmission],
-            limit: Optional[int] = None
+            train: List[AITASubmission],
+            test: List[AITASubmission],
+            valid: List[AITASubmission],
     ):
         pass
 
-    def train_test_split(
-            self,
-            aita_submissions: List[AITASubmission]
-    ) -> Tuple[List[AITASubmission], List[AITASubmission]]:
+    def judge(self, submission: AITASubmission) -> Judgement:
+        return self._judge(submission)
 
-        LOGGER.info("Spliting %s samples into train test datasets", len(aita_submissions))
+    def train(
+            self,
+            aita_submissions: List[AITASubmission],
+            limit: Optional[int] = None,
+            categories: Optional[List[Judgement]] = None
+    ):
+        # Filter down to specific categories
+        if categories:
+            aita_submissions = [
+                s for s in aita_submissions
+                if s.reddit_judgement in categories
+            ]
+
+        train, valid_test = self._split(aita_submissions, self._train_proportion)
+        valid, test = self._split(valid_test, 0.5)
+
+        if limit:
+            train = train[:limit]
+            test = test[:limit]
+            valid = valid[:limit]
+
+        return self._train(train, test, valid)
+
+    def _split(
+            self,
+            aita_submissions: List[AITASubmission],
+            proportion: float
+    ) -> Tuple[List[AITASubmission], List[AITASubmission]]:
 
         # Filter submissions that do not have a reddit judgement yet
         aita_submissions = [s for s in aita_submissions if s.reddit_judgement]
 
-        # Work out how many training samples there will be
+        # Work out how many samples there will be
         sample_count = len(aita_submissions)
-        train_sample_count = round(self._train_proportion * sample_count)
+        train_sample_count = round(proportion * sample_count)
 
         # Split submissions into two lists
         random.shuffle(aita_submissions)
         train, test = aita_submissions[: train_sample_count], aita_submissions[train_sample_count:]
-
-        LOGGER.info("Training samples %s", len(train))
-        LOGGER.info("Testing samples %s", len(test))
 
         return train, test
 
@@ -85,22 +108,15 @@ class AWDLSTM(BaseModel):
 
         self._model = None
 
-    def judge(self, submission: AITASubmission):
+    def _judge(self, submission: AITASubmission):
         self._model.predict(submission.submission_body)
 
-    def train(
+    def _train(
             self,
-            aita_submissions: List[AITASubmission],
-            limit: Optional[int] = None
+            train: List[AITASubmission],
+            test: List[AITASubmission],
+            valid: List[AITASubmission],
     ):
-
-        train, valid_test = self.train_test_split(aita_submissions)
-        valid, test = self.train_test_split(valid_test)
-
-        if limit:
-            train = train[:limit]
-            test = test[:limit]
-            valid = valid[:limit]
 
         train_df = pd.DataFrame(train)
         valid_df = pd.DataFrame(valid)
@@ -137,7 +153,7 @@ class AWDLSTM(BaseModel):
         # Fine tune the pretrained language model on the aita submissions
         learner = language_model_learner(lm_data, AWD_LSTM)
         learner.unfreeze()
-        learner.fit_one_cycle(10)
+        learner.fit_one_cycle(20)
         learner.save_encoder('enc')
 
         LOGGER.info("Training classifier")
@@ -145,9 +161,9 @@ class AWDLSTM(BaseModel):
         # as an encoder
         learner = text_classifier_learner(clf_data, AWD_LSTM)
         learner.load_encoder('enc')
-        learner.fit_one_cycle(10)
-        learner.unfreeze()
         learner.fit_one_cycle(20)
+        learner.unfreeze()
+        learner.fit_one_cycle(40)
 
         interp = ClassificationInterpretation.from_learner(learner)
         interp.plot_confusion_matrix(title='Confusion matrix')
@@ -188,19 +204,15 @@ class GradientBoosting(BaseModel):
             ]
         )
 
-    def judge(self, submission: AITASubmission) -> Judgement:
+    def _judge(self, submission: AITASubmission) -> Judgement:
         self._pipeline.predict(submission)
 
-    def train(
+    def _train(
             self,
-            aita_submissions: List[AITASubmission],
-            limit: Optional[int] = None
+            train: List[AITASubmission],
+            test: List[AITASubmission],
+            valid: List[AITASubmission],
     ):
-        train, test = self.train_test_split(aita_submissions)
-
-        if limit:
-            train = train[:limit]
-            test = test[:limit]
 
         LOGGER.info("Fitting Anubis pipeline")
         self._pipeline.fit(
